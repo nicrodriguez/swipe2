@@ -3,17 +3,20 @@ import { View, Animated, PanResponder, Dimensions } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = 0.25 * SCREEN_WIDTH;
-const SWIPE_OUT_DURATION = 250;
+const SWIPE_OUT_DURATION = 350;
 
 class Deck extends Component {
     constructor(props) {
         super(props);
+
+        this.lastY = 0;
         const position = new Animated.ValueXY();
         this.panResponder = PanResponder.create({
             onStartShouldSetPanResponder: () => true,
 
             // Logic to happen during gesture
             onPanResponderMove: (event, gesture) => {
+                this.lastY += gesture.dy;
                 position.setValue({ x: gesture.dx, y: gesture.dy });
             },
 
@@ -21,9 +24,9 @@ class Deck extends Component {
             onPanResponderRelease: (event, gesture) => {
 
                 if (gesture.dx > SWIPE_THRESHOLD) { // If user swipes right
-                    this.forceSwipe('right');
+                    this.forceSwipe('right', gesture);
                 } else if (gesture.dx < -SWIPE_THRESHOLD) { // If user swipes left
-                    this.forceSwipe('left');
+                    this.forceSwipe('left', gesture);
                 }else {
                     this.resetPosition();
                 }
@@ -33,19 +36,19 @@ class Deck extends Component {
         this.state = { position }; //This could also be this.position = position
     }
 
-    forceSwipe(direction) {
+    forceSwipe(direction, gesture) {
         const x = direction === 'right' ? SCREEN_WIDTH : -SCREEN_WIDTH;
         Animated.timing(this.state.position, {
             toValue: { x, y: 0 },
             duration: SWIPE_OUT_DURATION
-        }).start(() => this.onSwipeComplete(direction)); // After animation is complete onSwipeComplete is called
+        }).start(); // After animation is complete onSwipeComplete is called
     }
 
     onSwipeComplete(direction) {
         const { onSwipeLeft, onSwipeRight } = this.props;
 
         direction === 'right' ? onSwipeRight() : onSwipeLeft();
-        
+
     }
 
     resetPosition() {
